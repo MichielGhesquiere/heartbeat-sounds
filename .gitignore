@@ -1,3 +1,4 @@
 data/
 results/
 models/
+# Keep docs/ (version controlled) for selected assets

@@ -1,5 +1,5 @@
 import argparse
-from src.training.train import run_training
+from src.training.train import run_training, run_experiment_suite
 from src.utils.visualize import visualize_examples
 from src.utils.logging_config import setup_logging
 
@@ -22,6 +22,16 @@ def main():
     train_p.add_argument('--test_size', type=float, default=0.2)
     train_p.add_argument('--val_size', type=float, default=0.1)
     train_p.add_argument('--seed', type=int, default=42)
+    train_p.add_argument('--feature_type', type=str, default='sequence', choices=['mfcc','sequence'])
+    train_p.add_argument('--seq_mode', type=str, default='seq_mel_mfcc')
+    train_p.add_argument('--n_mels', type=int, default=64)
+    train_p.add_argument('--no_deltas', action='store_true')
+    train_p.add_argument('--no_stats', action='store_true')
+    train_p.add_argument('--no_class_weighting', action='store_true')
+    train_p.add_argument('--focal', action='store_true')
+    train_p.add_argument('--gamma', type=float, default=2.0)
+    train_p.add_argument('--experiment_label', type=str, default=None)
+    train_p.add_argument('--suite', action='store_true', help='Run predefined experiment suite for incremental gains')
 
     # Visualize subcommand
     vis_p = subparsers.add_parser('visualize', help='Create waveform and spectrogram images')
@@ -45,18 +55,43 @@ def main():
                            save_audio=not args.no_audio)
     else:
         # default to training if no command provided
-        run_training(data_dir=args.data_dir,
-                     results_dir=args.results_dir,
-                     models_dir=args.models_dir,
-                     max_duration=args.max_duration,
-                     sr=args.sr,
-                     n_mfcc=args.n_mfcc,
-                     batch_size=args.batch_size,
-                     epochs=args.epochs,
-                     lr=args.lr,
-                     test_size=args.test_size,
-                     val_size=args.val_size,
-                     seed=args.seed)
+        if getattr(args, 'suite', False):
+            run_experiment_suite(data_dir=args.data_dir,
+                                 results_dir=args.results_dir,
+                                 models_dir=args.models_dir,
+                                 max_duration=args.max_duration,
+                                 sr=args.sr,
+                                 n_mfcc=args.n_mfcc,
+                                 batch_size=args.batch_size,
+                                 epochs=args.epochs,
+                                 lr=args.lr,
+                                 test_size=args.test_size,
+                                 val_size=args.val_size,
+                                 seed=args.seed,
+                                 seq_mode=args.seq_mode,
+                                 n_mels=args.n_mels)
+        else:
+            run_training(data_dir=args.data_dir,
+                         results_dir=args.results_dir,
+                         models_dir=args.models_dir,
+                         max_duration=args.max_duration,
+                         sr=args.sr,
+                         n_mfcc=args.n_mfcc,
+                         batch_size=args.batch_size,
+                         epochs=args.epochs,
+                         lr=args.lr,
+                         test_size=args.test_size,
+                         val_size=args.val_size,
+                         seed=args.seed,
+                         feature_type=args.feature_type,
+                         seq_mode=args.seq_mode,
+                         n_mels=args.n_mels,
+                         add_deltas=not args.no_deltas,
+                         add_stats=not args.no_stats,
+                         class_weighting=not args.no_class_weighting,
+                         focal_loss=args.focal,
+                         gamma=args.gamma,
+                         experiment_label=args.experiment_label)
 
 if __name__ == '__main__':
     main()
