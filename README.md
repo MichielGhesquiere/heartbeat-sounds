@@ -139,18 +139,6 @@ Murmur characterization may depend on relative energy patterns before and after 
 ### 4.5 Attention vs Global Average Pooling
 Global average would dilute short murmur intervals. Attention assigns higher weights to frames with high diagnostic value, effectively performing soft frame selection. This reduces sensitivity to extraneous quiet or padded regions.
 
-### 4.6 Potential Architectural Extensions
-* Multi‑Head Self‑Attention (Transformer layer) after convs for richer relational modeling.
-* Temporal pyramid pooling – multi‑scale aggregation capturing both fine and coarse patterns.
-* Gated Recurrent Units (GRU) for lighter recurrent core (speed trade‑off).
-* Hybrid 2D CNN (treat (mel/time) as image) + temporal attention.
-* Add explicit phase channel (segmented systolic/diastolic masks) concatenated to features.
-
-### 4.7 Regularization & Stability Considerations
-* Dropout applied after fully connected layer; could extend to recurrent dropout.
-* Early stopping & learning rate scheduling (not yet implemented) mitigate overfitting seen when validation loss oscillates.
-* Gradient clipping (future) for occasional spikes when adding more spectral features.
-
 ### 4.8 Why Not Direct Transformer Yet?
 Transformers excel with ample data or strong augmentations; on modest sample counts they overfit quickly. CRNN + attention is a pragmatic middle ground with fewer parameters and stronger inductive bias for local stationarity.
 
@@ -159,29 +147,6 @@ Transformers excel with ample data or strong augmentations; on modest sample cou
 
 * **Class weighting**: Inverse frequency weights automatically inferred from training split (enabled by default).
 * **Focal loss (optional)**: `--focal --gamma 2.0` to focus gradient on hard / minority examples (experimental; off by default).
-
----
-## 6. Experiment Tracking & Reproducibility
-
-Each run produces a unique experiment directory when `save_experiment` is active (default):
-
-```
-results/<EXPERIMENT_LABEL>/
-  classification_report.txt
-  classification_report.json
-  confusion_matrix.png
-  training_curves.png
-  training_history.npz
-models/<EXPERIMENT_LABEL>/
-  best_model.pt
-```
-
-If you do not supply `--experiment_label`, an automatic label is generated including feature flags and a timestamp.
-
-Global aggregation file (root of `results/`):
-* `experiment_recalls_detailed.csv` – appends a line per experiment with per‑class recall.
-* `recall_progress.png` – chronological recall curves.
-* `recall_gains.png` – improvement vs baseline (first recorded experiment).
 
 ### Predefined Experiment Suite
 Run a standardized progression to quantify incremental gains (baseline → temporal → +class weighting → +deltas & spectral stats):
@@ -205,89 +170,7 @@ Incremental gains vs baseline:
 ![Recall Gains](docs/recall_gains.png)
 
 ---
-## 7. Running Custom Experiments
 
-Common flags:
-```
---feature_type {mfcc,sequence}
---seq_mode seq_mel_mfcc          # (default) mel + mfcc base
---n_mels 64                      # mel bins
---n_mfcc 40                      # MFCC count (used in both modes)
---no_deltas                      # disable delta & delta-delta
---no_stats                       # disable spectral stats
---no_class_weighting             # disable inverse-frequency weights
---focal --gamma 2.0              # enable focal loss
---experiment_label my_exp_name   # custom directory name
-```
-
-Example (full feature stack with weighting):
-```bash
-python -m src.utils.cli train \
-  --feature_type sequence \
-  --seq_mode seq_mel_mfcc \
-  --n_mels 64 \
-  --epochs 25 \
-  --experiment_label seq_full_v1
-```
-
-Minimal fast baseline:
-```bash
-python -m src.utils.cli train --feature_type mfcc --no_class_weighting --epochs 10 --experiment_label mfcc_fast_test
-```
-
----
-## 8. Interpreting Key Artifacts
-
-| Artifact | Purpose |
-|----------|---------|
-| `classification_report.json` | Machine‑readable per‑class metrics (parse for dashboards). |
-| `confusion_matrix.png` | Misclassification patterns (which classes confuse). |
-| `training_curves.png` | Detect over/underfitting, instability. |
-| `recall_progress.png` | Longitudinal recall evolution across experiments. |
-| `recall_gains.png` | Net improvement relative to initial baseline. |
-| `training_history.npz` | Numerical arrays for custom plotting / statistical analysis. |
-| `best_model.pt` | Checkpoint with lowest validation loss for the experiment. |
-
----
-## 9. Current Limitations & Next Steps
-
-Planned / suggested improvements:
-* Heart cycle segmentation (e.g., envelope + peak detection) to align features to S1/S2 phases.
-* Data augmentation: time stretch (±5–8%), slight pitch shift, additive low‑level noise, SpecAugment masks.
-* Pretrained audio embeddings (YAMNet, wav2vec2) for transfer learning comparisons.
-* Calibration metrics (ECE, reliability diagrams) for clinical interpretability.
-* Threshold tuning & cost‑sensitive evaluation (optimize murmur recall at fixed precision).
-* ROC / PR curves per class and AUC tracking.
-* Lightweight experiment registry (YAML manifest) + checksum of code state for stricter reproducibility.
-
----
-## 10. Reproducibility Tips
-* Fix random seed (`--seed`) for deterministic splits.
-* Keep `requirements.txt` pinned.
-* Archive `experiment_recalls_detailed.csv` and per‑experiment directories when publishing results.
-* Record Git commit hash alongside `experiment_label` in your own run logs if you branch frequently.
-
----
-## 11. Quick Start (TL;DR)
-```bash
-pip install -r requirements.txt
-python -m src.utils.cli train --suite --epochs 10   # benchmark progression
-python -m src.utils.cli visualize --per_class 3     # sample waveforms & mel specs
-```
-
-Then explore:
-* `results/experiment_recalls_detailed.csv`
-* `results/<EXPERIMENT_LABEL>/confusion_matrix.png`
-* `results/recall_progress.png`
-
-
----
-## 12. Contributing
-Pull requests welcome: add feature extractors, alternative backbones (e.g., CNN-Transformer hybrids), or improved augmentation modules. Please keep additions modular (new file or clearly separated class) and update this README.
-
----
-## 13. Citation / Acknowledgements
-Base dataset & initial exploratory inspiration from referenced Kaggle notebook / dataset authors. Please cite their original sources when publishing derived work.
 
 ---
 
@@ -344,15 +227,3 @@ results/visualizations/
   spectrograms/*.png
   audio/*.wav
 ```
-
-## Extending
-* Add augmentations in `dataset.py` (e.g., background noise, time masking).
-* Swap / add architectures in `models/` (Transformer, CNN, CRNN variants).
-* Add feature extractors under `features/` (e.g., Constant‑Q, wavelet scalograms, pretrained embeddings wrapper).
-* Integrate calibration & ROC/PR plotting into `training/train.py`.
-
-## Notes
-Current class map: artifact=0, murmur=1, normal=2. Adjust `CATEGORY_MAP` in `dataset.py` for additional classes (ensure enough samples & revisit weighting strategy).
-
----
-Happy experimenting!
