@@ -18,9 +18,10 @@ Creates a manifest file docs/README_ASSETS_MANIFEST.txt describing the sources.
 """
 
 from __future__ import annotations
+
 import argparse
-import os
 import glob
+import os
 import shutil
 from datetime import datetime
 
@@ -50,7 +51,9 @@ def _find_first(patterns):
     return None
 
 
-def export_assets(results_dir: str, out_dir: str, waveform_count: int = 1, include_spectrograms: bool = True):
+def export_assets(
+    results_dir: str, out_dir: str, waveform_count: int = 1, include_spectrograms: bool = True
+):
     out_img_dir = os.path.join(out_dir)
     _ensure_dir(out_img_dir)
     copied: list[str] = []
@@ -62,8 +65,8 @@ def export_assets(results_dir: str, out_dir: str, waveform_count: int = 1, inclu
         _copy_if_exists(src, dst, copied)
 
     # Visualization subfolders (expected under results/visualizations/...)
-    wave_dir = os.path.join(results_dir, 'visualizations', 'waveforms')
-    mel_dir = os.path.join(results_dir, 'visualizations', 'spectrograms')
+    wave_dir = os.path.join(results_dir, "visualizations", "waveforms")
+    mel_dir = os.path.join(results_dir, "visualizations", "spectrograms")
 
     for label in DEFAULT_LABELS:
         # Prefer numbered 0..N
@@ -91,8 +94,8 @@ def export_assets(results_dir: str, out_dir: str, waveform_count: int = 1, inclu
                     copied.append(spec_dst)
 
     # Manifest
-    manifest_path = os.path.join(out_img_dir, 'README_ASSETS_MANIFEST.txt')
-    with open(manifest_path, 'w') as mf:
+    manifest_path = os.path.join(out_img_dir, "README_ASSETS_MANIFEST.txt")
+    with open(manifest_path, "w") as mf:
         mf.write(f"Generated: {datetime.utcnow().isoformat()}Z\n")
         mf.write(f"Source results dir: {os.path.abspath(results_dir)}\n")
         mf.write("Copied files (relative to repo root):\n")
@@ -103,10 +106,12 @@ def export_assets(results_dir: str, out_dir: str, waveform_count: int = 1, inclu
 
 def main():
     parser = argparse.ArgumentParser(description="Export compact set of result images for README.")
-    parser.add_argument('--results_dir', type=str, default='results', help='Root results directory')
-    parser.add_argument('--out_dir', type=str, default='docs', help='Destination directory (tracked)')
-    parser.add_argument('--waveform_count', type=int, default=1, help='Waveforms per class')
-    parser.add_argument('--no_spectrograms', action='store_true', help='Exclude mel spectrograms')
+    parser.add_argument("--results_dir", type=str, default="results", help="Root results directory")
+    parser.add_argument(
+        "--out_dir", type=str, default="docs", help="Destination directory (tracked)"
+    )
+    parser.add_argument("--waveform_count", type=int, default=1, help="Waveforms per class")
+    parser.add_argument("--no_spectrograms", action="store_true", help="Exclude mel spectrograms")
     args = parser.parse_args()
     copied = export_assets(
         results_dir=args.results_dir,
@@ -119,5 +124,5 @@ def main():
         print(" -", c)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

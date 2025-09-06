@@ -1,0 +1,38 @@
+## Tooling configuration for linting, formatting, and static analysis.
+## Centralised so local environment, pre-commit and CI share identical rules.
+
+[tool.black]
+line-length = 100
+target-version = ["py310"]
+
+[tool.isort]
+profile = "black"
+line_length = 100
+known_first_party = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+ignore = ["E203", "E501"]
+exclude = [".venv", "build", "dist"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101"]
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+ignore_missing_imports = true  # 3rd party audio libs often lack stubs
+follow_imports = "silent"
+show_error_codes = true
+exclude = ["build", "dist"]
+explicit_package_bases = true
+mypy_path = "src"
+
+[tool.pytest.ini_options]
+addopts = "-q --disable-warnings --maxfail=1"
+testpaths = ["tests"]

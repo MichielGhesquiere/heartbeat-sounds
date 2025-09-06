@@ -1,24 +1,24 @@
+import logging
 import os
-from typing import Dict, List
-import numpy as np
-import matplotlib.pyplot as plt
+
 import librosa
 import librosa.display
+import matplotlib.pyplot as plt
+import numpy as np
 import soundfile as sf
-import logging
+
+from src.data.dataset import CATEGORY_MAP, build_dataset
 
 logger = logging.getLogger(__name__)
 
-from src.data.dataset import build_dataset, CATEGORY_MAP
-
 
 def _ensure_dirs(base_results: str):
-    vis_root = os.path.join(base_results, 'visualizations')
+    vis_root = os.path.join(base_results, "visualizations")
     paths = {
-        'root': vis_root,
-        'waveforms': os.path.join(vis_root, 'waveforms'),
-        'spectrograms': os.path.join(vis_root, 'spectrograms'),
-        'audio': os.path.join(vis_root, 'audio')
+        "root": vis_root,
+        "waveforms": os.path.join(vis_root, "waveforms"),
+        "spectrograms": os.path.join(vis_root, "spectrograms"),
+        "audio": os.path.join(vis_root, "audio"),
     }
     for p in paths.values():
         os.makedirs(p, exist_ok=True)
@@ -49,8 +49,8 @@ def plot_waveform(y: np.ndarray, sr: int, out_path: str, title: str):
     times = np.arange(len(y)) / sr
     plt.plot(times, y, linewidth=0.8)
     plt.title(title)
-    plt.xlabel('Time (s)')
-    plt.ylabel('Amplitude')
+    plt.xlabel("Time (s)")
+    plt.ylabel("Amplitude")
     plt.tight_layout()
     plt.savefig(out_path, dpi=150)
     plt.close()
@@ -61,16 +61,23 @@ def plot_mel_spectrogram(y: np.ndarray, sr: int, out_path: str, title: str, n_me
     S = librosa.feature.melspectrogram(y=y, sr=sr, n_mels=n_mels)
     S_db = librosa.power_to_db(S, ref=np.max)
     plt.figure(figsize=(10, 3))
-    librosa.display.specshow(S_db, sr=sr, x_axis='time', y_axis='mel')
-    plt.colorbar(format='%+2.0f dB')
+    librosa.display.specshow(S_db, sr=sr, x_axis="time", y_axis="mel")
+    plt.colorbar(format="%+2.0f dB")
     plt.title(title)
     plt.tight_layout()
     plt.savefig(out_path, dpi=150)
     plt.close()
 
 
-def visualize_examples(data_dir: str = 'data', results_dir: str = 'results', max_duration: float = 12.0,
-                       sr: int = 16000, per_class: int = 2, n_mels: int = 128, save_audio: bool = True):
+def visualize_examples(
+    data_dir: str = "data",
+    results_dir: str = "results",
+    max_duration: float = 12.0,
+    sr: int = 16000,
+    per_class: int = 2,
+    n_mels: int = 128,
+    save_audio: bool = True,
+):
     """Create waveform and mel-spectrogram images (and optional audio copies) for a few examples per class.
 
     Args:
@@ -89,7 +96,7 @@ def visualize_examples(data_dir: str = 'data', results_dir: str = 'results', max
     int_to_label = {v: k for k, v in CATEGORY_MAP.items()}
 
     # group indices per class
-    class_indices: Dict[int, List[int]] = {lbl: [] for lbl in int_to_label.keys()}
+    class_indices: dict[int, list[int]] = {lbl: [] for lbl in int_to_label.keys()}
     for idx, lbl in enumerate(y):
         if len(class_indices[lbl]) < per_class:
             class_indices[lbl].append(idx)
@@ -101,11 +108,13 @@ def visualize_examples(data_dir: str = 'data', results_dir: str = 'results', max
         label_name = int_to_label[lbl]
         for j, i in enumerate(indices):
             y_audio = X[i]
-            base_name = f"{label_name}_{j}".replace(' ', '_')
-            wave_out = os.path.join(paths['waveforms'], f"waveform_{base_name}.png")
-            spec_out = os.path.join(paths['spectrograms'], f"mel_{base_name}.png")
+            base_name = f"{label_name}_{j}".replace(" ", "_")
+            wave_out = os.path.join(paths["waveforms"], f"waveform_{base_name}.png")
+            spec_out = os.path.join(paths["spectrograms"], f"mel_{base_name}.png")
             plot_waveform(y_audio, sr, wave_out, f"Waveform - {label_name} #{j}")
-            plot_mel_spectrogram(y_audio, sr, spec_out, f"Mel Spectrogram - {label_name} #{j}", n_mels=n_mels)
+            plot_mel_spectrogram(
+                y_audio, sr, spec_out, f"Mel Spectrogram - {label_name} #{j}", n_mels=n_mels
+            )
             if save_audio:
                 # Ensure proper numeric dtype (avoid object arrays from container)
                 try:
@@ -114,13 +123,13 @@ def visualize_examples(data_dir: str = 'data', results_dir: str = 'results', max
                         # flatten any nested object elements
                         y_safe = np.concatenate([np.asarray(x).ravel() for x in y_safe])
                     y_safe = _to_float32(y_safe.squeeze())
-                    audio_out = os.path.join(paths['audio'], f"{base_name}.wav")
+                    audio_out = os.path.join(paths["audio"], f"{base_name}.wav")
                     sf.write(audio_out, y_safe, sr)
                 except Exception as wav_err:
                     print(f"Skipping audio write for {base_name}: {wav_err}")
 
-    logger.info("Saved visualizations to: %s", paths['root'])
+    logger.info("Saved visualizations to: %s", paths["root"])
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     visualize_examples()

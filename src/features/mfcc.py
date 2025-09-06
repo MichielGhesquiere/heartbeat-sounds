@@ -1,7 +1,7 @@
-from typing import Tuple
-import numpy as np
-import librosa
 import logging
+
+import librosa
+import numpy as np
 
 logger = logging.getLogger(__name__)
 
@@ -15,7 +15,7 @@ def extract_mfcc(y: np.ndarray, sr: int, n_mfcc: int = 40) -> np.ndarray:
     return mfccs.mean(axis=1)
 
 
-def batch_extract_mfcc(batch_audio, sr: int, n_mfcc: int = 40) -> Tuple[np.ndarray, int]:
+def batch_extract_mfcc(batch_audio, sr: int, n_mfcc: int = 40) -> tuple[np.ndarray, int]:
     features = []
     for i, y in enumerate(batch_audio):
         try:

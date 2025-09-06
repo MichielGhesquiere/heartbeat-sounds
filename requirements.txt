@@ -2,3 +2,5 @@ librosa
 numpy
 scikit-learn
 torch
+soundfile
+pytest

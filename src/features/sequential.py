@@ -1,7 +1,7 @@
-import numpy as np
-import librosa
 import logging
-from typing import List, Tuple
+
+import librosa
+import numpy as np
 
 logger = logging.getLogger(__name__)
 
@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 def extract_sequence_features(
     y: np.ndarray,
     sr: int,
-    mode: str = 'seq_mel_mfcc',
+    mode: str = "seq_mel_mfcc",
     n_mels: int = 64,
     n_mfcc: int = 20,
     add_deltas: bool = True,
@@ -37,10 +37,10 @@ def extract_sequence_features(
         )
         log_mel = librosa.power_to_db(mel_spec, ref=np.max)
 
-        feats: List[np.ndarray] = []
-        if mode in ('seq_mel', 'seq_mel_mfcc'):
+        feats: list[np.ndarray] = []
+        if mode in ("seq_mel", "seq_mel_mfcc"):
             feats.append(log_mel)
-        if mode in ('seq_mfcc', 'seq_mel_mfcc'):
+        if mode in ("seq_mfcc", "seq_mel_mfcc"):
             # MFCC from log-mel (stability) – librosa expects log power or power; supply log_mel via S=.
             mfcc = librosa.feature.mfcc(S=log_mel, sr=sr, n_mfcc=n_mfcc)
             feats.append(mfcc)
@@ -54,13 +54,21 @@ def extract_sequence_features(
             feats = new_feats
 
         if add_spectral_stats:
-            spectral_centroid = librosa.feature.spectral_centroid(y=y, sr=sr, n_fft=n_fft, hop_length=hop_length)
-            spectral_bandwidth = librosa.feature.spectral_bandwidth(y=y, sr=sr, n_fft=n_fft, hop_length=hop_length)
-            spectral_rolloff = librosa.feature.spectral_rolloff(y=y, sr=sr, n_fft=n_fft, hop_length=hop_length)
+            spectral_centroid = librosa.feature.spectral_centroid(
+                y=y, sr=sr, n_fft=n_fft, hop_length=hop_length
+            )
+            spectral_bandwidth = librosa.feature.spectral_bandwidth(
+                y=y, sr=sr, n_fft=n_fft, hop_length=hop_length
+            )
+            spectral_rolloff = librosa.feature.spectral_rolloff(
+                y=y, sr=sr, n_fft=n_fft, hop_length=hop_length
+            )
             zcr = librosa.feature.zero_crossing_rate(y, frame_length=n_fft, hop_length=hop_length)
             rms = librosa.feature.rms(y=y, frame_length=n_fft, hop_length=hop_length)
             # Contrast can have a slightly different frame alignment; compute and trim/pad.
-            contrast = librosa.feature.spectral_contrast(y=y, sr=sr, n_fft=n_fft, hop_length=hop_length)
+            contrast = librosa.feature.spectral_contrast(
+                y=y, sr=sr, n_fft=n_fft, hop_length=hop_length
+            )
             stats = [spectral_centroid, spectral_bandwidth, spectral_rolloff, zcr, rms, contrast]
             # Align time frames by min length
             min_frames = min(s.shape[1] for s in stats + feats)
@@ -85,7 +93,7 @@ def extract_sequence_features(
 
 
 def batch_extract_sequence(
-    batch_audio: List[np.ndarray],
+    batch_audio: list[np.ndarray],
     sr: int,
     mode: str,
     n_mels: int,
@@ -94,7 +102,7 @@ def batch_extract_sequence(
     add_spectral_stats: bool,
     n_fft: int = 1024,
     hop_length: int = 512,
-) -> Tuple[np.ndarray, int, int]:
+) -> tuple[np.ndarray, int, int]:
     """Extract sequence features for a list of audio arrays.
 
     Returns
@@ -103,7 +111,7 @@ def batch_extract_sequence(
     T: int number of frames
     F: int feature dimension
     """
-    feature_list: List[np.ndarray] = []
+    feature_list: list[np.ndarray] = []
     max_T: int = 0
     feature_dim: int = 0
     for i, y in enumerate(batch_audio):
